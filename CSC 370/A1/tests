@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "Running: \"a,b,c\" \"a,b/c\" \"B\" \"a,b,c\"; expecting: True"
+./run "a,b,c" "a,b/c" "B" "a,b,c"
+echo "Running: \"a,b,c\" \"a,b/c\" \"3\" \"a,b;b,c\"; expecting: False"
+./run "a,b,c" "a,b/c" "3" "a,b;b,c"
+echo "Running: \"title,theatre,city\" \"theatre/city;title,city/theatre\" \"3\" \"theatre,city;theatre,title\"; expecting: False"
+./run "title,theatre,city" "theatre/city;title,city/theatre" "3" "theatre,city;theatre,title"
+echo "Running: \"title,theatre,city\" \"theatre/city;title,city/theatre\" \"B\" \"theatre,city;theatre,title\"; expecting: True"
+./run "title,theatre,city" "theatre/city;title,city/theatre" "B" "theatre,city;theatre,title"
+echo "Running: \"a,b,c,d,e\" \"a,b/c;b,d/c\" \"B\" \"a,b,c;a,b,d,e\"; expecting: True"
+./run "a,b,c,d,e" "a,b/c;b,d/c" "B" "a,b,c;a,b,d,e"
+echo "Running: \"a,b,c,d,e\" \"a,b/c;b,d/c\" \"B\" \"b,c,d;a,b,d,e\"; expecting: True" 
+./run "a,b,c,d,e" "a,b/c;b,d/c" "B" "b,c,d;a,b,d,e"
+echo "Running: \"a,b,c,d,e\" \"a,b/c;b,d/c\" \"B\" \"a,b,c;a,b,d;d,e\"; expecting: False" 
+./run "a,b,c,d,e" "a,b/c;b,d/c" "B" "a,b,c;a,b,d;d,e"
+echo "Running: \"a,b,c;d,e\" \"a,b/c;d/e\" \"B\" \"a,b,c;d,e\"; expecting: True"
+./run "a,b,c;d,e" "a,b/c;d/e" "B" "a,b,c;d,e"

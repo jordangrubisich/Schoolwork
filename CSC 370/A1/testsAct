@@ -1,0 +1,111 @@
+#!/bin/bash
+
+./build
+# 6 Tests in BCNF, 2 Tests in 3NF
+SCORE=0
+
+function update_score_T { { local str ; read str ; }
+    if [ ${str} == "True" ]; then
+        SCORE=$(($SCORE + 5))
+    fi
+    return $SCORE
+}
+
+function update_score_F { { local str ; read str ; }
+    if [ ${str} == "False" ]; then
+        SCORE=$(($SCORE + 5))
+    fi
+    return $SCORE
+}
+
+
+## Single-attribute key
+./run "a,b,c" "a/b,c" "B" "a,b,c" | update_score_T
+SCORE=$?
+
+## Not a key
+./run "a,b,c" "a/b" "B" "a,b,c" | update_score_F
+SCORE=$?
+
+## Uses combining rule to make key
+./run "a,b,c" "a/b;a/c" "B" "a,b,c" | update_score_T
+SCORE=$?
+
+## Misses violation on second FD
+./run "a,b,c" "a/b;b/c" "B" "a,b,c" | update_score_F
+SCORE=$?
+
+## Cycle. Everything's a key.
+./run "a,b,c,d" "a/b;b/c;c/d;d/a" "B" "a,b,c,d" | update_score_T
+SCORE=$?
+
+## BCNF decomposition has already been done
+./run "a,b;c,d" "a/b" "B" "a,b;a,c,d" | update_score_T
+SCORE=$?
+
+## Simple example of a prime
+./run "a,b,c" "a/b,c;b/a" "3" "a,b,c" | update_score_T
+SCORE=$?
+
+## Question 1 from worksheet
+./run "a,b,c,d" "a,b/c,d;c/d;d/b" "3" "a,b,c,d" | update_score_T
+SCORE=$?
+
+# 2 Tests simple BCNF, 3 tests simple 3NF
+
+## Easy BCNF
+./run "a,b,c,d,e" "a,b/c;b,d/c" "B" "a,b,c;a,b,d,e" | update_score_T
+SCORE=$?
+
+## Does not calculate closure of A
+./run "a,b,c,d,e" "a/b,c,d;d/e" "B" "a,b,c,d;a,d,e" | update_score_F
+SCORE=$?
+
+## No superkey
+./run "a,b,c,d" "a,b/c;d/c" "3" "a,b,c;c,d" | update_score_F
+SCORE=$?
+
+## Same as above but adds key and removes redundant relation
+./run "a,b,c,d" "a,b/c;d/a" "3" "a,b,c;a,d;b,d" | update_score_T
+SCORE=$?
+
+## 3NF -- missing attributes
+./run "a,b,c,d" "a/b,c;b/a" "3" "a,b,c;a,b" | update_score_F
+SCORE=$?
+
+
+# 4 Tests recursive BCNF
+
+## Simple recursive one but sets up non-deterministic question later (probable/easy side)
+## Observe that first decomposition loses an FD which leads to non-determinism
+./run "a,b,c,d,e,f" "a,b/e;c,d/e;e/f" "B" "e,f;a,b,e;a,b,c,d" | update_score_T
+SCORE=$?
+
+## Similar to above, but forgot a step and non-determinism removed
+./run "a,b,c,d,e,f" "a,b/e;e/f;f/c" "B" "a,b,d;c,e,f;a,b,e" | update_score_F
+SCORE=$?
+
+## Similar to non-deterministic case, but completes up to the second-from-last step after random choice
+./run "c,d,e,f,g;a,b,c,d" "a,b/e;c,d/e;e/f;f/g" "B" "e,f;c,d,e;a,b,c,d" | update_score_F
+SCORE=$?
+
+## Recursed too far, basically applied 3NF algorithm
+./run "a,b,c,d,e" "a/b;b/c;c/a;d/e" "B" "a,b;b,c;a,c;d,e" | update_score_F
+SCORE=$?
+
+# 2 Tests tough BCNF, 1 test tough 3NF (minimal basis)
+
+## Question 5 from the BCNF worksheet
+./run "a,b,c,d,e" "a/b,c;b,c/d;c/b" "B" "b,c,d;a,c;a,e" | update_score_T
+SCORE=$?
+
+## Non-deterministic -- side where second FD is chosen first (less likely)
+./run "a,b,c,d,e,f" "a,b/e;c,d/e;e/f" "B" "e,f;c,d,e;a,b,c,d" | update_score_T
+SCORE=$?
+
+## Question 2 of the 3NF worksheet
+./run "t,h,c,g" "t/g;t,c/h,g;h/c" "3" "t,g;t,h,c" | update_score_T
+SCORE=$?
+
+
+echo $SCORE
